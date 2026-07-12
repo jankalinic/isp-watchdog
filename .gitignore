@@ -1,0 +1,6 @@
+netwatch.db
+netwatch.log
+charts/
+__pycache__/
+*.pyc
+test_netwatch.db
