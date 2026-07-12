@@ -16,3 +16,20 @@ body {
   width: 100%;
   border-radius: 4px;
 }
+
+#test-progress-track {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background-color: transparent;
+  z-index: 1030;
+}
+
+#test-progress-bar {
+  height: 100%;
+  width: 0%;
+  background-color: #2dd4bf;
+  transition: width 0.5s ease, background-color 0.3s ease;
+}

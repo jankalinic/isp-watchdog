@@ -131,7 +131,7 @@ def build_latency_figure(conn, targets, cutoff):
     for i, target in enumerate(targets):
         times, avg_rtt, _ = _bucketed_latency(conn, target, cutoff)
         color = SERIES_COLORS[i % len(SERIES_COLORS)]
-        ax.plot(times, avg_rtt, color=color, linewidth=2, label=target)
+        ax.plot(times, avg_rtt, color=color, linewidth=2, marker="o", markersize=4, label=target)
         valid = [(t, v) for t, v in zip(times, avg_rtt) if v is not None]
         if valid:
             lt, lv = valid[-1]
@@ -152,7 +152,7 @@ def build_loss_figure(conn, targets, cutoff):
     for i, target in enumerate(targets):
         times, _, loss_pct = _bucketed_latency(conn, target, cutoff)
         color = SERIES_COLORS[i % len(SERIES_COLORS)]
-        ax.plot(times, loss_pct, color=color, linewidth=2, label=target)
+        ax.plot(times, loss_pct, color=color, linewidth=2, marker="o", markersize=4, label=target)
         if times:
             ax.annotate(target, (times[-1], loss_pct[-1]), textcoords="offset points",
                         xytext=(6, 10 - i * 14), color=SECONDARY_INK, fontsize=9, va="center")
@@ -170,8 +170,8 @@ def build_speed_figure(conn, cutoff):
     fig, ax = plt.subplots(figsize=(10, 5))
     _style_axes(ax)
     times, avg_down, avg_up = _bucketed_speed(conn, cutoff)
-    ax.plot(times, avg_down, color=SERIES_COLORS[0], linewidth=2, label="download")
-    ax.plot(times, avg_up, color=SERIES_COLORS[1], linewidth=2, label="upload")
+    ax.plot(times, avg_down, color=SERIES_COLORS[0], linewidth=2, marker="o", markersize=4, label="download")
+    ax.plot(times, avg_up, color=SERIES_COLORS[1], linewidth=2, marker="o", markersize=4, label="upload")
     ax.set_title("Speed test results over time (hourly average)", color=PRIMARY_INK)
     ax.set_ylabel("Mbps", color=SECONDARY_INK)
     ax.set_ylim(bottom=0)

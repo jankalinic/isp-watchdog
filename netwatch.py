@@ -39,6 +39,7 @@ def build_targets():
 
 
 def sample_ping(target):
+    logging.info("pinging %s", target)
     conn = db.init_db()
     try:
         rtt_ms, lost = network.ping_host(target)
@@ -51,6 +52,7 @@ def sample_ping(target):
 
 def sample_traceroute(target):
     conn = db.init_db()
+    logging.info("traceroute for %s", target)
     try:
         hops = network.traceroute_host(target)
         ts = time.time()
@@ -65,10 +67,11 @@ def sample_traceroute(target):
         conn.close()
 
 
-def sample_speedtest(on_phase=None):
+def sample_speedtest(on_phase=None, on_progress=None):
     conn = db.init_db()
+    logging.info("speedtest for %s", on_phase)
     try:
-        result = bandwidth.run_speed_test(on_phase=on_phase)
+        result = bandwidth.run_speed_test(on_phase=on_phase, on_progress=on_progress)
         db.insert_speed_sample(
             conn, time.time(), result["download_mbps"], result["upload_mbps"],
             result["ping_ms"], result["server"],

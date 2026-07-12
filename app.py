@@ -68,14 +68,17 @@ def _set_job(job_id, **kwargs):
 def _run_check(job_id):
     def on_phase(phase, value):
         if phase == "ping":
-            _set_job(job_id, phase="download", ping_ms=value)
+            _set_job(job_id, phase="download", ping_ms=value, current_mbps=None)
         elif phase == "download":
-            _set_job(job_id, phase="upload", download_mbps=value)
+            _set_job(job_id, phase="upload", download_mbps=value, current_mbps=None)
         elif phase == "upload":
-            _set_job(job_id, phase="targets", upload_mbps=value)
+            _set_job(job_id, phase="targets", upload_mbps=value, current_mbps=None)
+
+    def on_progress(phase, value):
+        _set_job(job_id, current_mbps=value)
 
     try:
-        result = netwatch.sample_speedtest(on_phase=on_phase)
+        result = netwatch.sample_speedtest(on_phase=on_phase, on_progress=on_progress)
         if result is None:
             _set_job(job_id, phase="error", error="speed test failed, see netwatch.log")
             return
@@ -99,6 +102,7 @@ def check_now():
             "ping_ms": None,
             "download_mbps": None,
             "upload_mbps": None,
+            "current_mbps": None,
             "error": None,
         }
     threading.Thread(target=_run_check, args=(job_id,), daemon=True).start()
@@ -115,4 +119,4 @@ def check_now_status(job_id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, threaded=True)
+    app.run(host="0.0.0.0", port=7788, threaded=True)
