@@ -1,8 +1,9 @@
 """Flask web dashboard for netwatch: charts + on-demand check-now."""
 import io
-import time
+import threading
+import uuid
 
-from flask import Flask, Response, render_template
+from flask import Flask, Response, jsonify, render_template
 
 import chart
 import netwatch
@@ -16,6 +17,9 @@ CHART_BUILDERS = {
         conn, chart.targets_in_db(conn, None), cutoff),
     "speed": lambda conn, cutoff: chart.build_speed_figure(conn, cutoff),
 }
+
+_jobs = {}
+_jobs_lock = threading.Lock()
 
 
 @app.route("/")
@@ -56,17 +60,58 @@ def chart_image(name):
         conn.close()
 
 
-@app.route("/check-now", methods=["POST"])
-def check_now():
+def _set_job(job_id, **kwargs):
+    with _jobs_lock:
+        _jobs[job_id].update(kwargs)
+
+
+def _run_check(job_id):
+    def on_phase(phase, value):
+        if phase == "ping":
+            _set_job(job_id, phase="download", ping_ms=value)
+        elif phase == "download":
+            _set_job(job_id, phase="upload", download_mbps=value)
+        elif phase == "upload":
+            _set_job(job_id, phase="targets", upload_mbps=value)
+
     try:
+        result = netwatch.sample_speedtest(on_phase=on_phase)
+        if result is None:
+            _set_job(job_id, phase="error", error="speed test failed, see netwatch.log")
+            return
+
         targets = netwatch.build_targets()
         for target in targets:
             netwatch.sample_ping(target)
             netwatch.sample_traceroute(target)
-        netwatch.sample_speedtest()
-        return {"status": "ok", "ts": time.time()}
+
+        _set_job(job_id, phase="done")
     except Exception as e:
-        return {"status": "error", "message": str(e)}, 500
+        _set_job(job_id, phase="error", error=str(e))
+
+
+@app.route("/check-now", methods=["POST"])
+def check_now():
+    job_id = uuid.uuid4().hex
+    with _jobs_lock:
+        _jobs[job_id] = {
+            "phase": "ping",
+            "ping_ms": None,
+            "download_mbps": None,
+            "upload_mbps": None,
+            "error": None,
+        }
+    threading.Thread(target=_run_check, args=(job_id,), daemon=True).start()
+    return jsonify({"job_id": job_id}), 202
+
+
+@app.route("/check-now/status/<job_id>")
+def check_now_status(job_id):
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+    if job is None:
+        return Response(status=404)
+    return jsonify(job)
 
 
 if __name__ == "__main__":

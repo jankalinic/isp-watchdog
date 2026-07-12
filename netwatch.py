@@ -65,16 +65,18 @@ def sample_traceroute(target):
         conn.close()
 
 
-def sample_speedtest():
+def sample_speedtest(on_phase=None):
     conn = db.init_db()
     try:
-        result = bandwidth.run_speed_test()
+        result = bandwidth.run_speed_test(on_phase=on_phase)
         db.insert_speed_sample(
             conn, time.time(), result["download_mbps"], result["upload_mbps"],
             result["ping_ms"], result["server"],
         )
+        return result
     except Exception:
         logging.exception("speed test sample failed")
+        return None
     finally:
         conn.close()
 
