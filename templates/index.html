@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>netwatch</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f9f9f7; color: #0b0b0b; margin: 0; padding: 24px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .charts { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+  .charts img { width: 100%; max-width: 900px; border: 1px solid #e1e0d9; border-radius: 4px; background: #fcfcfb; }
+  button { font-size: 14px; padding: 8px 16px; border-radius: 4px; border: 1px solid #c3c2b7; background: #fcfcfb; cursor: pointer; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  #status { color: #52514e; margin-left: 12px; font-size: 13px; }
+</style>
+</head>
+<body>
+  <h1>netwatch</h1>
+  <button id="check-now">Check now</button>
+  <span id="status"></span>
+
+  <div class="charts">
+    <img id="chart-latency" src="/charts/latency.png" alt="Latency over time">
+    <img id="chart-loss" src="/charts/loss.png" alt="Packet loss over time">
+    <img id="chart-speed" src="/charts/speed.png" alt="Speed test results over time">
+    {% for target in targets %}
+    <img class="chart-traceroute" data-target="{{ target }}"
+         src="/charts/traceroute_{{ target.replace('.', '_') }}.png"
+         alt="Traceroute to {{ target }}">
+    {% endfor %}
+  </div>
+
+  <script>
+    function refreshCharts() {
+      const t = Date.now();
+      document.querySelectorAll('.charts img').forEach(img => {
+        const base = img.src.split('?')[0];
+        img.src = base + '?t=' + t;
+      });
+    }
+
+    document.getElementById('check-now').addEventListener('click', async () => {
+      const button = document.getElementById('check-now');
+      const status = document.getElementById('status');
+      button.disabled = true;
+      status.textContent = 'Checking... (this can take a minute)';
+      try {
+        const res = await fetch('/check-now', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          status.textContent = 'Last checked: ' + new Date(data.ts * 1000).toLocaleTimeString();
+          refreshCharts();
+        } else {
+          status.textContent = 'Check failed: ' + data.message;
+        }
+      } catch (err) {
+        status.textContent = 'Check failed: ' + err;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    setInterval(refreshCharts, 60000);
+  </script>
+</body>
+</html>

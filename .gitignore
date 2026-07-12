@@ -4,3 +4,6 @@ charts/
 __pycache__/
 *.pyc
 test_netwatch.db
+.idea/
+.venv/
+/docs/superpowers/

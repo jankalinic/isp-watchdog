@@ -1,0 +1,14 @@
+[Unit]
+Description=netwatch web dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/netwatch
+ExecStart=/usr/bin/python3 /home/pi/netwatch/app.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
